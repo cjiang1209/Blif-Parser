@@ -13,11 +13,16 @@ using namespace std;
 class ModelBuilder
 {
 private:
+	static default_random_engine RANDOM_ENGINE;
+
 	long limit;
 
 	const Model& _model;
 	unordered_map<string, int> _vars;
+	// Number of input signals
 	int _num_vars;
+	// Number of input, internal and output signals
+	int _num_signals;
 	MEDDLY::domain* _domain;
 	MEDDLY::forest* _mdd_forest;
 	vector<MEDDLY::dd_edge> _bdds;
@@ -48,9 +53,18 @@ public:
 	int actual_num_vars() const;
 	void reset_stat();
 
+	int num_signals() const;
+
 	void get_variable_order(int* order);
 	void swap_adjacent_variable(int lev);
 	void reorder(int* order);
+
+	// Static ordering heuristics
+	void dfs_order(int* order);
+
+	void fanin_order(int* order);
+	// Transient fanin
+	void recursive_tfi_depth(const Gate* gate, const vector<const Gate*>& gates, vector<int>& depths);
 
 	int num_nodes() const;
 
@@ -89,6 +103,11 @@ inline int ModelBuilder::actual_num_vars() const
 	return _model.inputs().size();
 }
 
+inline int ModelBuilder::num_signals() const
+{
+	return _num_signals;
+}
+
 inline void ModelBuilder::get_variable_order(int* order)
 {
 	MEDDLY::expert_forest* f = static_cast<MEDDLY::expert_forest*>(_mdd_forest);
@@ -104,6 +123,8 @@ inline void ModelBuilder::swap_adjacent_variable(int lev)
 
 inline void ModelBuilder::reorder(int* order)
 {
+	static_cast<MEDDLY::expert_forest*>(_mdd_forest)->resetPeakNumNodes();
+	static_cast<MEDDLY::expert_forest*>(_mdd_forest)->resetPeakMemoryUsed();
 	static_cast<MEDDLY::expert_forest*>(_mdd_forest)->reorderVariables(order);
 }
 

@@ -174,7 +174,7 @@ int main(int argc, char* argv[]) {
     vector<ModelBuilder*> builders;
     int max_num_vars = 0;
 
-    for(auto& model : models){
+    for (const auto& model : models) {
     	ModelBuilder* builder = new ModelBuilder(model);
     	if(max_num_vars < builder->actual_num_vars()) {
     		max_num_vars = builder->actual_num_vars();
@@ -207,10 +207,11 @@ int main(int argc, char* argv[]) {
     	order[0] = 0;
     	builder->get_variable_order(order);
 
-    	for(int i=0; i<num; i++) {
+    	for (int i = 0; i < num; i++) {
     		std::shuffle(&order[1], &order[builder->num_vars() + 1], rg);
+//    		builder->dfs_order(order);
 
-    		for(int i=1; i<=builder->num_vars(); i++) {
+    		for (int i = 1; i <= builder->num_vars(); i++) {
     			cout << order[i] << ", ";
     		}
     		cout << endl;
@@ -238,7 +239,7 @@ int main(int argc, char* argv[]) {
 //    builders[1]->output_status(cout);
 
 
-    for(auto& builder : builders) {
+    for (auto& builder : builders) {
     	builder->clean_up();
     	delete builder;
     }

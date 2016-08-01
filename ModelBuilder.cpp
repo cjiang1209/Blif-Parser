@@ -7,6 +7,8 @@
 #include "ModelBuilder.h"
 #include "System.h"
 
+default_random_engine ModelBuilder::RANDOM_ENGINE;
+
 ModelBuilder::ModelBuilder(const Model& model)
 	: _model(model), _domain(nullptr), _mdd_forest(nullptr)
 {
@@ -109,6 +111,8 @@ void ModelBuilder::create_vars()
 		}
 	}
 
+	_num_signals = var;
+
 	MEDDLY::dd_edge bdd(_mdd_forest);
 	_mdd_forest->createEdge(false, bdd);
 	_bdds.assign(1 + var, bdd);
@@ -140,14 +144,14 @@ void ModelBuilder::examine_dependency(const Gate* gate, const vector<const Gate*
 
 void ModelBuilder::build_model()
 {
-	vector<const Gate*> gate_ptrs(_bdds.size(), nullptr);
+	vector<const Gate*> gate_ptrs(num_signals() + 1, nullptr);
 	for (auto& gate : _model.gates()) {
 		gate_ptrs[get_var(get_name(gate.output()))] = &gate;
 	}
 
 	// Determine the building order
 	vector<int> order;
-	vector<int> refs(_bdds.size(), 0);
+	vector<int> refs(num_signals() + 1, 0);
 	for (auto& output : _model.outputs()) {
 		if(gate_ptrs[get_var(get_name(output))] != nullptr) {
 			examine_dependency(gate_ptrs[get_var(get_name(output))], gate_ptrs, order, refs);
@@ -288,6 +292,153 @@ void ModelBuilder::optimize(int top, int bottom)
 	double end_time = get_cpu_time();
 	cout << num << " -> " << _mdd_forest->getCurrentNumNodes() << endl;
 	cout << (end_time - start_time) << " s" << endl;
+}
+
+void ModelBuilder::dfs_order(int* order)
+{
+	vector<const Gate*> gate_ptrs(num_signals() + 1, nullptr);
+	for(auto& gate : _model.gates()) {
+		gate_ptrs[get_var(get_name(gate.output()))] = &gate;
+	}
+
+	vector<int> todo;
+	for (const auto& output : _model.outputs()) {
+		// Primary outputs
+		int output_var = get_var(get_name(output));
+		if (gate_ptrs[output_var] != nullptr) {
+			todo.push_back(output_var);
+		}
+	}
+	std::shuffle(todo.begin(), todo.end(), RANDOM_ENGINE);
+
+	vector<bool> visited(num_signals() + 1, false);
+
+	order[0] = 0;
+	int last = 1;
+	while (!todo.empty()) {
+		int signal = todo.back();
+		todo.pop_back();
+
+		if (visited[signal]) {
+			continue;
+		}
+		visited[signal] = true;
+
+		vector<string> inputs = gate_ptrs[signal]->inputs();
+		std::shuffle(inputs.begin(), inputs.end(), RANDOM_ENGINE);
+
+		for (const auto& input : inputs) {
+			int input_var = get_var(input);
+			if (visited[input_var]) {
+				continue;
+			}
+			else if (gate_ptrs[input_var] == nullptr) {
+				// Primary input
+				order[last++] = input_var;
+				visited[input_var] = true;
+			}
+			else {
+				todo.push_back(input_var);
+			}
+		}
+	}
+}
+
+void ModelBuilder::fanin_order(int* order)
+{
+	vector<const Gate*> gate_ptrs(num_signals() + 1, nullptr);
+	for (const auto& gate : _model.gates()) {
+		gate_ptrs[get_var(get_name(gate.output()))] = &gate;
+	}
+
+	vector<int> depths(num_signals() + 1, -1);
+	for (int i = 1; i <= actual_num_vars(); i++) {
+		depths[i] = 0;
+	}
+
+	for (auto& output : _model.outputs()) {
+		int output_var = get_var(get_name(output));
+		if (gate_ptrs[output_var] != nullptr && depths[output_var] == -1) {
+			recursive_tfi_depth(gate_ptrs[output_var], gate_ptrs, depths);
+		}
+	}
+
+//	for(auto& d : depth) {
+//		cout << d <<", ";
+//	}
+//	cout << endl;
+
+	auto greater_than = [&depths](int x, int y) {
+		return depths[x] > depths[y];
+	};
+
+	vector<bool> visited(num_signals() + 1, false);
+	vector<int> todo;
+
+	vector<int> sorted;
+	for(auto& output : _model.outputs()) {
+		int output_var = get_var(get_name(output));
+		if (gate_ptrs[output_var] != nullptr) {
+			sorted.push_back(output_var);
+		}
+	}
+	std::sort(sorted.begin(), sorted.end(), greater_than);
+
+	todo.assign(sorted.begin(), sorted.end());
+
+	order[0] = 0;
+	int last = 1;
+	while (!todo.empty()) {
+		sorted.clear();
+
+		int signal = todo.back();
+		todo.pop_back();
+
+		if (visited[signal]) {
+			continue;
+		}
+		visited[signal] = true;
+
+		const Gate* gate = gate_ptrs[signal];
+		for (const auto& input : gate->inputs()) {
+			int input_var = get_var(input);
+			if (visited[input_var]) {
+				continue;
+			}
+			else if(gate_ptrs[input_var] == nullptr) {
+				// Primary input
+				order[last++] = input_var;
+				visited[input_var] = true;
+			}
+			else {
+				sorted.push_back(input_var);
+			}
+		}
+		std::sort(sorted.begin(), sorted.end(), greater_than);
+		for (const auto& i : sorted) {
+			todo.push_back(i);
+		}
+	}
+}
+
+void ModelBuilder::recursive_tfi_depth(const Gate* gate, const vector<const Gate*>& gates, vector<int>& depths)
+{
+	assert(gate != nullptr);
+
+	int output_var = get_var(get_name(gate->output()));
+	int max = -1;
+	for (const auto& input : gate->inputs()) {
+		int input_var = get_var(input);
+		if (depths[input_var] != -1) {
+			max = std::max(depths[input_var] + 1, max);
+		}
+		else {
+			recursive_tfi_depth(gates[input_var], gates, depths);
+			max = std::max(depths[input_var] + 1, max);
+		}
+	}
+
+	depths[output_var] = max;
 }
 
 void ModelBuilder::clean_up()
