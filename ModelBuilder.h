@@ -104,7 +104,6 @@ inline void ModelBuilder::swap_adjacent_variable(int lev)
 
 inline void ModelBuilder::reorder(int* order)
 {
-//	static_cast<MEDDLY::expert_forest*>(_mdd_forest)->removeAllComputeTableEntries();
 	static_cast<MEDDLY::expert_forest*>(_mdd_forest)->reorderVariables(order);
 }
 

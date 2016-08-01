@@ -73,7 +73,7 @@ void ModelBuilder::create_vars()
 	int var = 0;
 	for (const auto& input : _model.inputs()) {
 		var++;
-		_vars.insert({input, var});
+		_vars.emplace(input, var);
 	}
 
 	assert(var <= _num_vars);
@@ -84,14 +84,14 @@ void ModelBuilder::create_vars()
 			string name = get_name(input);
 			if(_vars.find(name) == _vars.end()) {
 				var++;
-				_vars.insert({ name, var });
+				_vars.emplace(name, var);
 			}
 		}
 
 		string name = get_name(gate.output());
 		if(_vars.find(name) == _vars.end()) {
 			var++;
-			_vars.insert({ name, var });
+			_vars.emplace(name, var);
 		}
 	}
 
@@ -99,13 +99,13 @@ void ModelBuilder::create_vars()
 		string name = get_name(latch.input());
 		if (_vars.find(name) == _vars.end()) {
 			var++;
-			_vars.insert({name, var});
+			_vars.emplace(name, var);
 		}
 
 		name = get_name(latch.output());
 		if (_vars.find(name) == _vars.end()) {
 			var++;
-			_vars.insert({ name, var });
+			_vars.emplace(name, var);
 		}
 	}
 
@@ -177,7 +177,7 @@ void ModelBuilder::build_model()
 //	std::map<int, bool> dup;
 	for(auto& output : _model.outputs()) {
 		int var = get_var(output);
-		_output_bdds.insert({output, _bdds[var]});
+		_output_bdds.emplace(output, _bdds[var]);
 //		cout << "(" << output << ", " <<_bdds[var].getNodeCount() << ")";
 	}
 	cout << endl;
