@@ -48,7 +48,7 @@ void ModelBuilder::initialize(const char* heuristic)
 		p.setSinkDown();
 	}
 	else if (strcmp(heuristic, "BU") == 0) {
-		p.setBubbleUp();
+		p.setBringUp();
 	}
 	else if (strcmp(heuristic, "LC") == 0) {
 		p.setLowestCost();
@@ -62,6 +62,7 @@ void ModelBuilder::initialize(const char* heuristic)
 	else if (strcmp(heuristic, "LARC") == 0) {
 		p.setLARC();
 	}
+	p.setQuasiReduced();
 
 	_mdd_forest = _domain->createForest(false, MEDDLY::forest::BOOLEAN, MEDDLY::forest::MULTI_TERMINAL, p);
 
@@ -170,7 +171,7 @@ void ModelBuilder::build_model()
 			build_gate(*gate_ptrs[i], refs);
 		}
 
-//		output_status(cout);
+		output_status(cout);
 
 		if(_mdd_forest->getCurrentNumNodes() > limit) {
 			optimize();
@@ -292,6 +293,27 @@ void ModelBuilder::optimize(int top, int bottom)
 	double end_time = get_cpu_time();
 	cout << num << " -> " << _mdd_forest->getCurrentNumNodes() << endl;
 	cout << (end_time - start_time) << " s" << endl;
+}
+
+void ModelBuilder::get_variable_order(int* order)
+{
+	MEDDLY::expert_forest* f = static_cast<MEDDLY::expert_forest*>(_mdd_forest);
+	for(int i = 1; i <= _num_vars; i++) {
+		order[i] = f->getVarByLevel(i);
+	}
+}
+
+void ModelBuilder::swap_adjacent_variable(int lev)
+{
+	static_cast<MEDDLY::expert_forest*>(_mdd_forest)->swapAdjacentVariables(lev);
+}
+
+void ModelBuilder::reorder(int* order)
+{
+	MEDDLY::expert_forest* f = static_cast<MEDDLY::expert_forest*>(_mdd_forest);
+	f->resetPeakNumNodes();
+	f->resetPeakMemoryUsed();
+	f->reorderVariables(order);
 }
 
 void ModelBuilder::dfs_order(int* order)
@@ -446,9 +468,10 @@ void ModelBuilder::clean_up()
 	if (_domain != nullptr) {
 		_vars.clear();
 		MEDDLY::destroyDomain(_domain);
-		_domain = nullptr;
-		_mdd_forest = nullptr;
 	}
+	_domain = nullptr;
+	_mdd_forest = nullptr;
+	_output_bdds.clear();
 }
 
 void ModelBuilder::output_status(ostream& out)

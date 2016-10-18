@@ -4,6 +4,7 @@
 
 #include "BlifParser.h"
 #include "ModelBuilder.h"
+#include "IndexSetModelBuilder.h"
 #include "System.h"
 
 using namespace std;
@@ -154,6 +155,100 @@ void gradual_greedy(ModelBuilder& x, ModelBuilder& y)
 	delete[] y_order;
 }
 
+//int main(int argc, char* argv[]) {
+//    if (argc != 4){
+//    	return print_usage();
+//    }
+//
+//    BlifParser parser;
+//    parser.parse(argv[1]);
+//    int num = atoi(argv[2]);
+//    const char* heuristic = argv[3];
+//
+//    cout << argv[1] << endl;
+//    cout << heuristic << "\n" << endl;
+//
+//    const vector<Model>& ms = parser.models();
+//    vector<Model> models;
+//    models.insert(models.end(), ms.begin(), ms.end());
+//
+//    vector<ModelBuilder*> builders;
+//    int max_num_vars = 0;
+//
+//    for (const auto& model : models) {
+//    	ModelBuilder* builder = new ModelBuilder(model);
+//    	if(max_num_vars < builder->actual_num_vars()) {
+//    		max_num_vars = builder->actual_num_vars();
+//    	}
+//    	builders.push_back(builder);
+//    }
+//
+//    default_random_engine rg;
+//
+//    MEDDLY::initialize();
+//    for(auto& builder : builders){
+//    	double start = get_cpu_time();
+//
+//    	builder->set_num_vars(max_num_vars);
+//    	builder->initialize(heuristic);
+//
+//    	builder->build_model();
+////    	builder->output_status(cout);
+//    	cout << endl;
+//
+//    	builder->optimize();
+//    	builder->output_status(cout);
+//
+////    	double start = get_cpu_time();
+//
+//    	double end = get_cpu_time();
+//    	cout << (end - start) << " s" << endl << endl;
+//
+//    	int* order = new int[builder->num_vars()+1];
+//    	order[0] = 0;
+//    	builder->get_variable_order(order);
+//
+//    	for (int i = 0; i < num; i++) {
+//    		std::shuffle(&order[1], &order[builder->num_vars() + 1], rg);
+////    		builder->dfs_order(order);
+//
+//    		for (int i = 1; i <= builder->num_vars(); i++) {
+//    			cout << order[i] << ", ";
+//    		}
+//    		cout << endl;
+//
+//    		start = get_cpu_time();
+//    		builder->reorder(order);
+//    		builder->output_status(cout);
+//    		end = get_cpu_time();
+//    		cout << (end - start) << " s" << endl << endl;
+//    	}
+//
+//    	delete[] order;
+//
+////    	start = get_cpu_time();
+////    	builder->reorder(best_order);
+////    	builder->output_status(cout);
+////    	end = get_cpu_time();
+////    	cout << (end - start) << " s" << endl << endl;
+//    }
+//
+////    greedy(*builders[0], *builders[1]);
+////    gradual_greedy(*builders[0], *builders[1]);
+//
+////    builders[0]->output_status(cout);
+////    builders[1]->output_status(cout);
+//
+//
+//    for (auto& builder : builders) {
+//    	builder->clean_up();
+//    	delete builder;
+//    }
+//    MEDDLY::cleanup();
+//
+//    return 0;
+//}
+
 int main(int argc, char* argv[]) {
     if (argc != 4){
     	return print_usage();
@@ -171,11 +266,11 @@ int main(int argc, char* argv[]) {
     vector<Model> models;
     models.insert(models.end(), ms.begin(), ms.end());
 
-    vector<ModelBuilder*> builders;
+    vector<IndexSetModelBuilder*> builders;
     int max_num_vars = 0;
 
     for (const auto& model : models) {
-    	ModelBuilder* builder = new ModelBuilder(model);
+    	IndexSetModelBuilder* builder = new IndexSetModelBuilder(model);
     	if(max_num_vars < builder->actual_num_vars()) {
     		max_num_vars = builder->actual_num_vars();
     	}
@@ -196,6 +291,9 @@ int main(int argc, char* argv[]) {
     	cout << endl;
 
     	builder->optimize();
+
+    	builder->construct_index_sets();
+
     	builder->output_status(cout);
 
 //    	double start = get_cpu_time();
@@ -203,27 +301,39 @@ int main(int argc, char* argv[]) {
     	double end = get_cpu_time();
     	cout << (end - start) << " s" << endl << endl;
 
-    	int* order = new int[builder->num_vars()+1];
+    	int* order = new int[builder->num_vars() + 1];
     	order[0] = 0;
     	builder->get_variable_order(order);
 
+    	int* original_order = new int[builder->num_vars() + 1];
+    	original_order[0] = 0;
+    	builder->get_variable_order(original_order);
+
     	for (int i = 0; i < num; i++) {
+    		cout << "Reordering..." << endl;
     		std::shuffle(&order[1], &order[builder->num_vars() + 1], rg);
 //    		builder->dfs_order(order);
 
-    		for (int i = 1; i <= builder->num_vars(); i++) {
-    			cout << order[i] << ", ";
-    		}
-    		cout << endl;
+//    		for (int i = 1; i <= builder->num_vars(); i++) {
+//    			cout << order[i] << ", ";
+//    		}
+//    		cout << endl;
 
     		start = get_cpu_time();
     		builder->reorder(order);
     		builder->output_status(cout);
+
+//    		builder->reorder(original_order);
+//    		builder->output_status(cout);
+
     		end = get_cpu_time();
     		cout << (end - start) << " s" << endl << endl;
     	}
 
     	delete[] order;
+
+    	builder->reorder(original_order);
+    	builder->output_status(cout);
 
 //    	start = get_cpu_time();
 //    	builder->reorder(best_order);

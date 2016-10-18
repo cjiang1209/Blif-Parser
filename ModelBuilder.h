@@ -1,6 +1,7 @@
 #ifndef MODELBUILDER_H_
 #define MODELBUILDER_H_
 
+#include <random>
 #include <vector>
 #include <unordered_map>
 #include <meddly.h>
@@ -12,7 +13,7 @@ using namespace std;
 
 class ModelBuilder
 {
-private:
+protected:
 	static default_random_engine RANDOM_ENGINE;
 
 	long limit;
@@ -55,9 +56,9 @@ public:
 
 	int num_signals() const;
 
-	void get_variable_order(int* order);
-	void swap_adjacent_variable(int lev);
-	void reorder(int* order);
+	virtual void get_variable_order(int* order);
+	virtual void swap_adjacent_variable(int lev);
+	virtual void reorder(int* order);
 
 	// Static ordering heuristics
 	void dfs_order(int* order);
@@ -68,7 +69,7 @@ public:
 
 	int num_nodes() const;
 
-	void output_status(ostream& out);
+	virtual void output_status(ostream& out);
 };
 
 inline string ModelBuilder::get_name(string signal)
@@ -106,26 +107,6 @@ inline int ModelBuilder::actual_num_vars() const
 inline int ModelBuilder::num_signals() const
 {
 	return _num_signals;
-}
-
-inline void ModelBuilder::get_variable_order(int* order)
-{
-	MEDDLY::expert_forest* f = static_cast<MEDDLY::expert_forest*>(_mdd_forest);
-	for(int i = 1; i <= _num_vars; i++) {
-		order[i] = f->getVarByLevel(i);
-	}
-}
-
-inline void ModelBuilder::swap_adjacent_variable(int lev)
-{
-	static_cast<MEDDLY::expert_forest*>(_mdd_forest)->swapAdjacentVariables(lev);
-}
-
-inline void ModelBuilder::reorder(int* order)
-{
-	static_cast<MEDDLY::expert_forest*>(_mdd_forest)->resetPeakNumNodes();
-	static_cast<MEDDLY::expert_forest*>(_mdd_forest)->resetPeakMemoryUsed();
-	static_cast<MEDDLY::expert_forest*>(_mdd_forest)->reorderVariables(order);
 }
 
 inline int ModelBuilder::num_nodes() const
