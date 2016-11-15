@@ -5,6 +5,7 @@
 #include "BlifParser.h"
 #include "ModelBuilder.h"
 #include "IndexSetModelBuilder.h"
+#include "Rebuilder.h"
 #include "System.h"
 
 using namespace std;
@@ -266,11 +267,12 @@ int main(int argc, char* argv[]) {
     vector<Model> models;
     models.insert(models.end(), ms.begin(), ms.end());
 
-    vector<IndexSetModelBuilder*> builders;
+    vector<ModelBuilder*> builders;
     int max_num_vars = 0;
 
     for (const auto& model : models) {
-    	IndexSetModelBuilder* builder = new IndexSetModelBuilder(model);
+    	ModelBuilder* builder = new Rebuilder(model);
+//    	ModelBuilder* builder = new ModelBuilder(model);
     	if(max_num_vars < builder->actual_num_vars()) {
     		max_num_vars = builder->actual_num_vars();
     	}
@@ -292,7 +294,7 @@ int main(int argc, char* argv[]) {
 
     	builder->optimize();
 
-    	builder->construct_index_sets();
+//    	builder->construct_index_sets();
 
     	builder->output_status(cout);
 
