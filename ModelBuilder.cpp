@@ -178,11 +178,9 @@ void ModelBuilder::build_model()
 		}
 	}
 
-//	std::map<int, bool> dup;
 	for(auto& output : _model.outputs()) {
 		int var = get_var(output);
 		_output_bdds.emplace(output, _bdds[var]);
-//		cout << "(" << output << ", " <<_bdds[var].getNodeCount() << ")";
 	}
 	cout << endl;
 
