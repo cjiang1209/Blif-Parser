@@ -240,7 +240,7 @@ int main(int argc, char* argv[]) {
     	builder->output_status(cout);
 
     	double end = get_cpu_time();
-    	cout << (end - start) << " s" << endl << endl;
+    	cout << (end - start) << " s" << endl;
 
     	int* order = new int[builder->num_vars() + 1];
     	order[0] = 0;
@@ -250,24 +250,28 @@ int main(int argc, char* argv[]) {
     	original_order[0] = 0;
     	builder->get_variable_order(original_order);
 
+    	cout << "Order: ";
+    	for (int i = 1; i <= builder->num_vars(); i++) {
+    		cout << original_order[i] << ", ";
+    	}
+    	cout << "\n" << endl;
+
     	for (int i = 0; i < num; i++) {
     		cout << "Reordering..." << endl;
     		std::shuffle(&order[1], &order[builder->num_vars() + 1], rg);
 //    		builder->dfs_order(order);
 
+    		cout << "Order: ";
     		for (int i = 1; i <= builder->num_vars(); i++) {
     			cout << order[i] << ", ";
     		}
     		cout << endl;
 
+    		builder->output_status(cout);
     		start = get_cpu_time();
     		builder->reorder(order);
-    		builder->output_status(cout);
-
-//    		builder->reorder(original_order);
-//    		builder->output_status(cout);
-
     		end = get_cpu_time();
+    		builder->output_status(cout);
     		cout << (end - start) << " s" << endl << endl;
     	}
 
