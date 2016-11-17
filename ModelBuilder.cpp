@@ -44,7 +44,7 @@ void ModelBuilder::initialize(const char* heuristic)
 	else if (strcmp(heuristic, "HI") == 0) {
 		p.setHighestInversion();
 	}
-	else if (strcmp(heuristic, "BD") == 0) {
+	else if (strcmp(heuristic, "SD") == 0) {
 		p.setSinkDown();
 	}
 	else if (strcmp(heuristic, "BU") == 0) {
@@ -61,6 +61,12 @@ void ModelBuilder::initialize(const char* heuristic)
 	}
 	else if (strcmp(heuristic, "LARC") == 0) {
 		p.setLARC();
+	}
+	else if (strcmp(heuristic, "REBUILD") == 0) {
+		;
+	}
+	else {
+		exit(-1);
 	}
 
 	_mdd_forest = _domain->createForest(false, MEDDLY::forest::BOOLEAN, MEDDLY::forest::MULTI_TERMINAL, p);
