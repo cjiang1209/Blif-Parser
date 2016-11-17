@@ -240,7 +240,7 @@ int main(int argc, char* argv[]) {
     	builder->output_status(cout);
 
     	double end = get_cpu_time();
-    	cout << (end - start) << " s" << endl;
+    	cout << "Time: " << (end - start) << " s" << endl;
 
     	int* order = new int[builder->num_vars() + 1];
     	order[0] = 0;
@@ -272,7 +272,7 @@ int main(int argc, char* argv[]) {
     		builder->reorder(order);
     		end = get_cpu_time();
     		builder->output_status(cout);
-    		cout << (end - start) << " s" << endl << endl;
+    		cout << "Time: " << (end - start) << " s" << endl << endl;
     	}
 
     	delete[] order;
