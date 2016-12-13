@@ -15,7 +15,6 @@ void Rebuilder::reorder(int* order)
 	for (auto& entry : _output_bdds) {
 		cout << "Rebuilding " << entry.first << endl;
 		entry.second = gr.rebuild(entry.second);
-		gr.clearCache();
 	}
 
 	_mdd_forest = target_mdd_forest;

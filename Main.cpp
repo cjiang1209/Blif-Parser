@@ -277,9 +277,9 @@ int main(int argc, char* argv[]) {
 
     	delete[] order;
 
-    	cout << "Reordering to the original order..." << endl;
-    	builder->reorder(original_order);
-    	builder->output_status(cout);
+//    	cout << "Reordering to the original order..." << endl;
+//    	builder->reorder(original_order);
+//    	builder->output_status(cout);
     }
 
 //    greedy(*builders[0], *builders[1]);
