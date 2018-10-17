@@ -220,9 +220,11 @@ int main(int argc, char* argv[]) {
     	builders.push_back(builder);
     }
 
-    default_random_engine rg;
-
     MEDDLY::initialize();
+
+#if false
+
+    default_random_engine rg;
     for(auto& builder : builders){
     	double start = get_cpu_time();
 
@@ -287,6 +289,49 @@ int main(int argc, char* argv[]) {
 
 //    builders[0]->output_status(cout);
 //    builders[1]->output_status(cout);
+
+#else
+    cout << "Start transforming..." << endl;
+    for (auto& builder : builders) {
+    	builder->set_num_vars(max_num_vars);
+    	builder->initialize(heuristic);
+
+    	builder->build_model();
+//    	builder->output_status(cout);
+    	cout << endl;
+
+    	builder->optimize();
+
+    	builder->output_status(cout);
+
+    	{
+			double start = get_cpu_time();
+
+			builder->transform_ESRBDD();
+
+			double end = get_cpu_time();
+			cout << "Time: " << (end - start) << " s" << endl;
+    	}
+
+    	{
+			double start = get_cpu_time();
+
+			builder->transform_ZDD_and_CZDD();
+
+			double end = get_cpu_time();
+			cout << "Time: " << (end - start) << " s" << endl;
+    	}
+
+    	{
+			double start = get_cpu_time();
+
+			builder->transform_CBDD();
+
+			double end = get_cpu_time();
+			cout << "Time: " << (end - start) << " s" << endl;
+    	}
+    }
+#endif
 
     for (auto& builder : builders) {
     	builder->clean_up();

@@ -59,7 +59,7 @@ void IndexSetModelBuilder::reorder(int* order)
 {
 	MEDDLY::expert_forest* f = static_cast<MEDDLY::expert_forest*>(_evplus_forest);
 	f->resetPeakNumNodes();
-	f->resetPeakMemoryUsed();
+//	f->resetPeakMemoryUsed();
 	f->reorderVariables(order);
 }
 

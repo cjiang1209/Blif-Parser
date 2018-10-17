@@ -69,6 +69,12 @@ public:
 
 	int num_nodes() const;
 
+	void transform_ESRBDD() const;
+	void transform_ZDD_and_CZDD() const;
+	void transform_CBDD() const;
+	long getNodeCount(MEDDLY::forest* forest, const unordered_map<string, MEDDLY::dd_edge>& dds) const;
+	long getNodeCount(MEDDLY::forest* forest, const vector<MEDDLY::dd_edge>& dds) const;
+
 	virtual void output_status(ostream& out);
 };
 
@@ -117,7 +123,7 @@ inline int ModelBuilder::num_nodes() const
 inline void ModelBuilder::reset_stat()
 {
 	_mdd_forest->resetPeakNumNodes();
-	_mdd_forest->resetPeakMemoryUsed();
+	//_mdd_forest->resetPeakMemoryUsed();
 }
 
 inline bool ModelBuilder::is_complement(string signal)

@@ -315,7 +315,7 @@ void ModelBuilder::reorder(int* order)
 {
 	MEDDLY::expert_forest* f = static_cast<MEDDLY::expert_forest*>(_mdd_forest);
 	f->resetPeakNumNodes();
-	f->resetPeakMemoryUsed();
+//	f->resetPeakMemoryUsed();
 	f->reorderVariables(order);
 }
 
@@ -464,6 +464,212 @@ void ModelBuilder::recursive_tfi_depth(const Gate* gate, const vector<const Gate
 	}
 
 	depths[output_var] = max;
+}
+
+void ModelBuilder::transform_ESRBDD() const
+{
+	MEDDLY::forest* esrbdd_forest = _domain->createForest(false, MEDDLY::forest::BOOLEAN,
+			MEDDLY::forest::ESR, MEDDLY::forest::policies(false));
+	vector<MEDDLY::dd_edge> esrbdds;
+
+	int nodeCountBDD = 0;
+	int edgeCountBDD = 0;
+	int nodeCountESRBDD = 0;
+	int edgeCountESRBDD = 0;
+	for (const auto& _output : _output_bdds) {
+		cout << _output.first << ": ";
+		{
+			int nodeCount = _output.second.getNodeCount();
+			int edgeCount = _output.second.getEdgeCount();
+			nodeCountBDD += nodeCount;
+			edgeCountBDD += edgeCount;
+			cout << nodeCount << ", " << edgeCount;
+		}
+		cout << " => ";
+		{
+			MEDDLY::dd_edge esrbdd(esrbdd_forest);
+			MEDDLY::apply(MEDDLY::COPY, _output.second, esrbdd);
+
+			int nodeCount = esrbdd.getNodeCount();
+			int edgeCount = esrbdd.getEdgeCount();
+			nodeCountESRBDD += nodeCount;
+			edgeCountESRBDD += edgeCount;
+			cout << nodeCount << ", " << edgeCount;
+
+			esrbdds.push_back(esrbdd);
+		}
+		cout << endl;
+	}
+	cout << "\nTotal: " << nodeCountBDD << ", " << edgeCountBDD
+			<< " => " << nodeCountESRBDD << ", " << edgeCountESRBDD
+			<< endl;
+
+	cout << "\nBDD Total Node: " << getNodeCount(_mdd_forest, _output_bdds) << endl;
+	cout << "ESRBDD Total Node: " << getNodeCount(esrbdd_forest, esrbdds) << endl;
+	cout << "ESRBDD Active Node: " << esrbdd_forest->getCurrentNumNodes() << endl;
+}
+
+void ModelBuilder::transform_ZDD_and_CZDD() const
+{
+	MEDDLY::forest::policies p(false);
+	p.setZeroSuppressionReduced();
+	MEDDLY::forest* zdd_forest = _domain->createForest(false, MEDDLY::forest::BOOLEAN,
+			MEDDLY::forest::MULTI_TERMINAL, p);
+	vector<MEDDLY::dd_edge> zdds;
+
+	{
+		int nodeCountBDD = 0;
+		int edgeCountBDD = 0;
+		int nodeCountZDD = 0;
+		int edgeCountZDD = 0;
+		for (const auto& _output : _output_bdds) {
+			cout << _output.first << ": ";
+			{
+				int nodeCount = _output.second.getNodeCount();
+				int edgeCount = _output.second.getEdgeCount();
+				nodeCountBDD += nodeCount;
+				edgeCountBDD += edgeCount;
+				cout << nodeCount << ", " << edgeCount;
+			}
+			cout << " => ";
+			{
+				MEDDLY::dd_edge zdd(zdd_forest);
+				MEDDLY::apply(MEDDLY::COPY, _output.second, zdd);
+
+				int nodeCount = zdd.getNodeCount();
+				int edgeCount = zdd.getEdgeCount();
+				nodeCountZDD += nodeCount;
+				edgeCountZDD += edgeCount;
+				cout << nodeCount << ", " << edgeCount;
+
+				zdds.push_back(zdd);
+			}
+			cout << endl;
+			cout << "ZDD Total Node: " << zdd_forest->getCurrentNumNodes() << endl;
+		}
+		cout << "\nTotal: " << nodeCountBDD << ", " << edgeCountBDD
+				<< " => " << nodeCountZDD << ", " << edgeCountZDD
+				<< endl;
+
+		cout << "\nBDD Total Node: " << getNodeCount(_mdd_forest, _output_bdds) << endl;
+		cout << "ZDD Total Node: " << getNodeCount(zdd_forest, zdds) << endl;
+		cout << "ZDD Active Node: " << zdd_forest->getCurrentNumNodes() << endl;
+	}
+
+	MEDDLY::forest* czdd_forest = _domain->createForest(false, MEDDLY::forest::BOOLEAN,
+			MEDDLY::forest::CZDD, MEDDLY::forest::policies(false));
+	vector<MEDDLY::dd_edge> czdds;
+
+	{
+		int nodeCountZDD = 0;
+		int edgeCountZDD = 0;
+		int nodeCountCZDD = 0;
+		int edgeCountCZDD = 0;
+		int i = 0;
+		for (const auto& _output : _output_bdds) {
+			cout << _output.first << ": ";
+			{
+				int nodeCount = zdds[i].getNodeCount();
+				int edgeCount = zdds[i].getEdgeCount();
+				nodeCountZDD += nodeCount;
+				edgeCountZDD += edgeCount;
+				cout << nodeCount << ", " << edgeCount;
+			}
+			cout << " => ";
+			{
+				MEDDLY::dd_edge czdd(czdd_forest);
+				MEDDLY::apply(MEDDLY::COPY, zdds[i], czdd);
+
+				int nodeCount = czdd.getNodeCount();
+				int edgeCount = czdd.getEdgeCount();
+				nodeCountCZDD += nodeCount;
+				edgeCountCZDD += edgeCount;
+				cout << nodeCount << ", " << edgeCount;
+
+				czdds.push_back(czdd);
+			}
+			cout << endl;
+			cout << "CZDD Total Node: " << zdd_forest->getCurrentNumNodes() << endl;
+
+			i++;
+		}
+		cout << "\nTotal: " << nodeCountZDD << ", " << edgeCountZDD
+				<< " => " << nodeCountCZDD << ", " << edgeCountCZDD
+				<< endl;
+
+		cout << "\nZDD Total Node: " << getNodeCount(zdd_forest, zdds) << endl;
+		cout << "CZDD Total Node: " << getNodeCount(czdd_forest, czdds) << endl;
+		cout << "CZDD Active Node: " << czdd_forest->getCurrentNumNodes() << endl;
+	}
+}
+
+void ModelBuilder::transform_CBDD() const
+{
+
+	MEDDLY::forest* cbdd_forest = _domain->createForest(false, MEDDLY::forest::BOOLEAN,
+			MEDDLY::forest::CBDD, MEDDLY::forest::policies(false));
+	vector<MEDDLY::dd_edge> cbdds;
+
+	int nodeCountBDD = 0;
+	int edgeCountBDD = 0;
+	int nodeCountCBDD = 0;
+	int edgeCountCBDD = 0;
+	for (const auto& _output : _output_bdds) {
+		cout << _output.first << ": ";
+		{
+			int nodeCount = _output.second.getNodeCount();
+			int edgeCount = _output.second.getEdgeCount();
+			nodeCountBDD += nodeCount;
+			edgeCountBDD += edgeCount;
+			cout << nodeCount << ", " << edgeCount;
+		}
+		cout << " => ";
+		{
+			MEDDLY::dd_edge cbdd(cbdd_forest);
+			MEDDLY::apply(MEDDLY::COPY, _output.second, cbdd);
+
+			int nodeCount = cbdd.getNodeCount();
+			int edgeCount = cbdd.getEdgeCount();
+			nodeCountCBDD += nodeCount;
+			edgeCountCBDD += edgeCount;
+			cout << nodeCount << ", " << edgeCount;
+
+			cbdds.push_back(cbdd);
+		}
+		cout << endl;
+		cout << "CBDD Total Node: " << cbdd_forest->getCurrentNumNodes() << endl;
+	}
+	cout << "\nTotal: " << nodeCountBDD << ", " << edgeCountBDD
+			<< " => " << nodeCountCBDD << ", " << edgeCountCBDD
+			<< endl;
+
+	cout << "\nBDD Total Node: " << getNodeCount(_mdd_forest, _output_bdds) << endl;
+	cout << "CBDD Total Node: " << getNodeCount(cbdd_forest, cbdds) << endl;
+	cout << "CBDD Active Node: " << cbdd_forest->getCurrentNumNodes() << endl;
+}
+
+long ModelBuilder::getNodeCount(MEDDLY::forest* forest, const unordered_map<string, MEDDLY::dd_edge>& dds) const
+{
+	MEDDLY::node_handle* nodes = new MEDDLY::node_handle[dds.size()];
+	int i = 0;
+	for (const auto& dd : dds) {
+		nodes[i] = dd.second.getNode();
+		i++;
+	}
+	long count = dynamic_cast<MEDDLY::expert_forest*>(forest)->getNodeCount(nodes, dds.size());
+	delete[] nodes;
+	return count;
+}
+
+long ModelBuilder::getNodeCount(MEDDLY::forest* forest, const vector<MEDDLY::dd_edge>& dds) const
+{
+	MEDDLY::node_handle* nodes = new MEDDLY::node_handle[dds.size()];
+	for (int i = 0; i < dds.size(); i++) {
+		nodes[i] = dds[i].getNode();
+	}
+	long count = dynamic_cast<MEDDLY::expert_forest*>(forest)->getNodeCount(nodes, dds.size());
+	delete[] nodes;
+	return count;
 }
 
 void ModelBuilder::clean_up()
