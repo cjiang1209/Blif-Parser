@@ -72,6 +72,7 @@ public:
 	void transform_ESRBDD() const;
 	void transform_ZDD_and_CZDD() const;
 	void transform_CBDD() const;
+	void transform_TaggedBDD() const;
 	long getNodeCount(MEDDLY::forest* forest, const unordered_map<string, MEDDLY::dd_edge>& dds) const;
 	long getNodeCount(MEDDLY::forest* forest, const vector<MEDDLY::dd_edge>& dds) const;
 

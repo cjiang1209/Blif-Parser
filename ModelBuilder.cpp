@@ -648,6 +648,50 @@ void ModelBuilder::transform_CBDD() const
 	cout << "CBDD Active Node: " << cbdd_forest->getCurrentNumNodes() << endl;
 }
 
+void ModelBuilder::transform_TaggedBDD() const
+{
+	MEDDLY::forest* taggedbdd_forest = _domain->createForest(false, MEDDLY::forest::BOOLEAN,
+			MEDDLY::forest::TAGGED, MEDDLY::forest::policies(false));
+	vector<MEDDLY::dd_edge> taggedbdds;
+
+	int nodeCountBDD = 0;
+	int edgeCountBDD = 0;
+	int nodeCountTaggedBDD = 0;
+	int edgeCountTaggedBDD = 0;
+	for (const auto& _output : _output_bdds) {
+		cout << _output.first << ": ";
+		{
+			int nodeCount = _output.second.getNodeCount();
+			int edgeCount = _output.second.getEdgeCount();
+			nodeCountBDD += nodeCount;
+			edgeCountBDD += edgeCount;
+			cout << nodeCount << ", " << edgeCount;
+		}
+		cout << " => ";
+		{
+			MEDDLY::dd_edge taggedbdd(taggedbdd_forest);
+			MEDDLY::apply(MEDDLY::COPY, _output.second, taggedbdd);
+
+			int nodeCount = taggedbdd.getNodeCount();
+			int edgeCount = taggedbdd.getEdgeCount();
+			nodeCountTaggedBDD += nodeCount;
+			edgeCountTaggedBDD += edgeCount;
+			cout << nodeCount << ", " << edgeCount;
+
+			taggedbdds.push_back(taggedbdd);
+		}
+		cout << endl;
+		cout << "TaggedBDD Total Node: " << taggedbdd_forest->getCurrentNumNodes() << endl;
+	}
+	cout << "\nTotal: " << nodeCountBDD << ", " << edgeCountBDD
+			<< " => " << nodeCountTaggedBDD << ", " << edgeCountTaggedBDD
+			<< endl;
+
+	cout << "\nBDD Total Node: " << getNodeCount(_mdd_forest, _output_bdds) << endl;
+	cout << "TaggedBDD Total Node: " << getNodeCount(taggedbdd_forest, taggedbdds) << endl;
+	cout << "TaggedBDD Active Node: " << taggedbdd_forest->getCurrentNumNodes() << endl;
+}
+
 long ModelBuilder::getNodeCount(MEDDLY::forest* forest, const unordered_map<string, MEDDLY::dd_edge>& dds) const
 {
 	MEDDLY::node_handle* nodes = new MEDDLY::node_handle[dds.size()];

@@ -330,6 +330,15 @@ int main(int argc, char* argv[]) {
 			double end = get_cpu_time();
 			cout << "Time: " << (end - start) << " s" << endl;
     	}
+
+    	{
+			double start = get_cpu_time();
+
+			builder->transform_TaggedBDD();
+
+			double end = get_cpu_time();
+			cout << "Time: " << (end - start) << " s" << endl;
+    	}
     }
 #endif
 
