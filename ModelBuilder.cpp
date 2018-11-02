@@ -507,6 +507,8 @@ void ModelBuilder::transform_ESRBDD() const
 	cout << "\nBDD Total Node: " << getNodeCount(_mdd_forest, _output_bdds) << endl;
 	cout << "ESRBDD Total Node: " << getNodeCount(esrbdd_forest, esrbdds) << endl;
 	cout << "ESRBDD Active Node: " << esrbdd_forest->getCurrentNumNodes() << endl;
+
+	countEdgeLabelsForESR(esrbdd_forest, esrbdds);
 }
 
 void ModelBuilder::transform_ZDD_and_CZDD() const
@@ -714,6 +716,29 @@ long ModelBuilder::getNodeCount(MEDDLY::forest* forest, const vector<MEDDLY::dd_
 	long count = dynamic_cast<MEDDLY::expert_forest*>(forest)->getNodeCount(nodes, dds.size());
 	delete[] nodes;
 	return count;
+}
+
+void ModelBuilder::countEdgeLabelsForESR(MEDDLY::forest* forest, const vector<MEDDLY::dd_edge>& dds) const
+{
+	MEDDLY::node_handle* nodes = new MEDDLY::node_handle[dds.size()];
+	for (int i = 0; i < dds.size(); i++) {
+		nodes[i] = dds[i].getNode();
+	}
+	long* counts = new long[4];
+	dynamic_cast<MEDDLY::expert_forest*>(forest)->countEdgeLabels(nodes, dds.size(), counts);
+	for (int i = 0; i < dds.size(); i++) {
+		long ev = -1;
+		dds[i].getEdgeValue(ev);
+		counts[ev]++;
+	}
+	delete[] nodes;
+
+	std::cout << "BLANK: " << counts[0] << std::endl;
+	std::cout << "FULL: " << counts[1] << std::endl;
+	std::cout << "ZERO: " << counts[2] << std::endl;
+	std::cout << "ONE: " << counts[3] << std::endl;
+
+	delete[] counts;
 }
 
 void ModelBuilder::clean_up()

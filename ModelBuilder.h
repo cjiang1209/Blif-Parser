@@ -76,6 +76,8 @@ public:
 	long getNodeCount(MEDDLY::forest* forest, const unordered_map<string, MEDDLY::dd_edge>& dds) const;
 	long getNodeCount(MEDDLY::forest* forest, const vector<MEDDLY::dd_edge>& dds) const;
 
+	void countEdgeLabelsForESR(MEDDLY::forest* forest, const vector<MEDDLY::dd_edge>& dds) const;
+
 	virtual void output_status(ostream& out);
 };
 
