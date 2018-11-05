@@ -724,7 +724,7 @@ void ModelBuilder::countEdgeLabelsForESR(MEDDLY::forest* forest, const vector<ME
 	for (int i = 0; i < dds.size(); i++) {
 		nodes[i] = dds[i].getNode();
 	}
-	long* counts = new long[4];
+	long* counts = new long[5];
 	dynamic_cast<MEDDLY::expert_forest*>(forest)->countEdgeLabels(nodes, dds.size(), counts);
 	for (int i = 0; i < dds.size(); i++) {
 		long ev = -1;
@@ -737,6 +737,7 @@ void ModelBuilder::countEdgeLabelsForESR(MEDDLY::forest* forest, const vector<ME
 	std::cout << "FULL: " << counts[1] << std::endl;
 	std::cout << "ZERO: " << counts[2] << std::endl;
 	std::cout << "ONE: " << counts[3] << std::endl;
+	std::cout << "FULL(FALSE): " << counts[4] << std::endl;
 
 	delete[] counts;
 }
