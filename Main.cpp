@@ -307,6 +307,15 @@ int main(int argc, char* argv[]) {
     	{
 			double start = get_cpu_time();
 
+			builder->transform_QBDD();
+
+			double end = get_cpu_time();
+			cout << "Time: " << (end - start) << " s" << endl;
+    	}
+
+    	{
+			double start = get_cpu_time();
+
 			builder->transform_ESRBDD();
 
 			double end = get_cpu_time();
@@ -334,7 +343,7 @@ int main(int argc, char* argv[]) {
     	{
 			double start = get_cpu_time();
 
-			builder->transform_TaggedBDD();
+			builder->transform_TBDD();
 
 			double end = get_cpu_time();
 			cout << "Time: " << (end - start) << " s" << endl;
